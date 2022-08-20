@@ -1,0 +1,83 @@
+---
+title: "MWS Tree Sale Outreach"
+author: "Nissim Lebovits"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+Mom--
+
+I've made a single map here that combines median income by tract and median parcel size by tract. I multiplied parcel size by 10^8 and used a log transformation to make it map more clearly. 
+
+The two layers are semitransparent and overlaid. Median income goes from white (low) to red (high) and median parcel size goes from white (low) to blue (high). The overlap is purple.
+
+The two major neighborhoods are **North Philly near Pennypack Park and Northwest Philly around Chestnut Hill.**
+
+If you want to turn off one layer, you can do it in the box on the lefthand side of the map that looks like three layers stacked on top of each other. Click on that and then unclick the layer that you want to turn off. The layer names are phl_zip_inc for income and med_parcel_size for parcel size. 
+
+You should be able to zoom in on the map to see neighborhood names. You can change the basemap, too, if you want. You can do it from the same box where you turn layers off and on. I recommend using the OpenStreetMap layer to see neighborhood landmarks.
+
+Hope this helps! Let me know if there are any changes I can make.
+
+```{r setup, include = F, echo = F, message = FALSE, warning = FALSE, error = FALSE, results = "hide"}
+library(tidyverse) #For data cleaning & wrangling
+library(tidycensus) #For working with census data
+library(dplyr) #For data cleaning & wrangling
+library(acs) #For working with ACS data
+library(sf)
+library(mapview)
+library(janitor)
+library(tmap)
+
+setwd("C:/Users/nissi/Desktop/R Stuff")
+
+options(tigris_use_cache = TRUE)
+```
+
+```{r cars, include = T, echo = F, message = FALSE, warning = FALSE, error = FALSE, results = "asis"}
+phl_zip_inc = get_acs(geography = "tract", # What is the lowest level of geography are we interested in?
+                      year = 2020, # What year do we want - this can also be used for 2000 census data
+                      variables = c(med_hh_inc = "B19013_001E"), #Median household income
+                      geometry = T, # Do we want this as a shapefile? No, not now.
+                      state = "PA", # What state?
+                      county = "Philadelphia",
+                      output = "wide")
+
+#####
+
+#https://www.opendataphilly.org/dataset/land-use
+phl_resid_parcels = st_read("C:/Users/nissi/Desktop/R Stuff/Land_Use/Land_Use.shp") |>
+                      clean_names() |>
+                      filter(c_dig1 == 1)
+
+#https://www.opendataphilly.org/dataset/zip-codes
+phl_tracts = st_read("C:/Users/nissi/Desktop/R Stuff/PHL_Census_Tracts_2010/phl_tracts_2010.shp")
+
+sf::sf_use_s2(FALSE)
+
+parcels_x_tract = st_join(phl_resid_parcels, phl_tracts)
+
+med_parcel_size = aggregate(x = parcels_x_tract, by = phl_tracts, FUN = median)
+
+med_parcel_size$shape_area = med_parcel_size$shape_area*10^8
+
+#####
+tmap_mode("view")
+
+tm_shape(phl_zip_inc) +
+  tm_polygons("med_hh_inc", 
+              palette = c("white", "darkred"), 
+              alpha = 0.6, 
+              border.col = NA,
+              lwd = 0.1) +
+tm_shape(med_parcel_size) +
+  tm_polygons("shape_area", 
+              palette = c("white", "darkblue"), 
+              alpha = 0.3, 
+              style = "log10", 
+              border.col = NA,
+              lwd = 0.1)
+
+
+```
+
