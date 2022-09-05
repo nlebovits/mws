@@ -35,11 +35,11 @@ options(tigris_use_cache = TRUE)
 ```
 
 ```{r cars, include = T, echo = F, message = FALSE, warning = FALSE, error = FALSE, results = "asis"}
-phl_zip_inc = get_acs(geography = "tract", # What is the lowest level of geography are we interested in?
-                      year = 2020, # What year do we want - this can also be used for 2000 census data
+phl_zip_inc = get_acs(geography = "tract", 
+                      year = 2020, 
                       variables = c(med_hh_inc = "B19013_001E"), #Median household income
-                      geometry = T, # Do we want this as a shapefile? No, not now.
-                      state = "PA", # What state?
+                      geometry = T, 
+                      state = "PA", 
                       county = "Philadelphia",
                       output = "wide")
 
